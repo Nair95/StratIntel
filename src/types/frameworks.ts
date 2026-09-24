@@ -261,6 +261,8 @@ export interface AnalysisResponseData {
     executionVectors: string[];
   };
   turn: number;
+  groundingStatus?: 'active' | 'quota_fallback' | 'internal_knowledge';
+  groundingNotice?: string;
 }
 
 export interface BoardroomSessionRecord {

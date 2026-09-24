@@ -13,6 +13,8 @@ interface VirtualTabsViewProps {
   searchQueries?: string[];
   citations?: SearchCitation[];
   turn?: number;
+  groundingStatus?: 'active' | 'quota_fallback' | 'internal_knowledge';
+  groundingNotice?: string;
   onOpenExport?: () => void;
 }
 
@@ -21,6 +23,8 @@ export const VirtualTabsView: React.FC<VirtualTabsViewProps> = ({
   searchQueries = [],
   citations = [],
   turn = 1,
+  groundingStatus,
+  groundingNotice,
   onOpenExport
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -105,6 +109,21 @@ export const VirtualTabsView: React.FC<VirtualTabsViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Quota Fallback Notice if Search Grounding Quota was exceeded */}
+      {groundingStatus === 'quota_fallback' && (
+        <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 text-amber-200/90 font-mono">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+            <span>
+              {groundingNotice || "Google Search tool quota was exceeded for this API key. StratIntel seamlessly operated with Deep Domain Intelligence simulation."}
+            </span>
+          </div>
+          <span className="text-[10px] bg-amber-900/60 text-amber-300 px-2 py-0.5 rounded border border-amber-700/50 whitespace-nowrap">
+            Deep Intelligence Mode
+          </span>
+        </div>
+      )}
 
       {/* Live Grounding Queries Bar if available */}
       {searchQueries.length > 0 && (

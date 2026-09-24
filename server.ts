@@ -89,6 +89,25 @@ function parseStructuredOutput(text: string) {
     }
   }
 
+  // Extract Option C
+  const optionCMatch = text.match(/\*\s*\*\*Option C:\s*([^*]+?)\*\*([\s\S]*?)(?=\n👉|\n---|$)/i);
+  let optionCTitle = "Asymmetric Growth Optionality";
+  let optionCHypothesis = "Exploit high-optionality pivots and strategic realignments.";
+  let optionCVectors: string[] = [];
+
+  if (optionCMatch) {
+    optionCTitle = optionCMatch[1].trim();
+    const hypMatch = optionCMatch[2].match(/\*Strategic Hypothesis:\*\s*([^\n\r]+)/i);
+    if (hypMatch) optionCHypothesis = hypMatch[1].trim();
+    const vecMatch = optionCMatch[2].match(/\*Execution Vectors:\*\s*([\s\S]*?)(?=\n\s*\*|\n👉|$)/i);
+    if (vecMatch) {
+      optionCVectors = vecMatch[1]
+        .split(/\n-|\n\s*\d+\.|\n\*/)
+        .map(v => v.trim())
+        .filter(v => v.length > 5);
+    }
+  }
+
   // Extract MECE Breakdown points
   const meceMatch = text.match(/###\s*🎯\s*Core Structural Challenge \(MECE\)([\s\S]*?)(?=\n<\/details>)/i);
   let meceBottleneck: string[] = [];
@@ -114,8 +133,110 @@ function parseStructuredOutput(text: string) {
       title: optionBTitle,
       hypothesis: optionBHypothesis,
       executionVectors: optionBVectors.length ? optionBVectors : ["Phase 1: Protect core cash cow operations", "Phase 2: Establish joint ventures or licensing hedge", "Phase 3: Contingency capital readiness"]
+    },
+    optionC: {
+      title: optionCTitle,
+      hypothesis: optionCHypothesis,
+      executionVectors: optionCVectors.length ? optionCVectors : ["Phase 1: Monitor macroeconomic and industry inflection catalysts", "Phase 2: Construct capital-light option partnerships", "Phase 3: Scale asymmetric capability"]
     }
   };
+}
+
+let cachedSearchQuotaExhausted = false;
+
+function getRetryDelayMs(err: any, attempt: number): number {
+  const errMsg = String(err?.message || err);
+  const match = errMsg.match(/retry in ([0-9.]+)s/i);
+  if (match) {
+    const sec = parseFloat(match[1]);
+    if (!isNaN(sec) && sec > 0) {
+      return Math.min(Math.ceil(sec * 1000) + 500, 10000);
+    }
+  }
+  return 2000 * Math.pow(2, attempt);
+}
+
+/**
+ * Robust executive generation engine:
+ * 1. Attempts real-time Google Search Grounding.
+ * 2. If the user's API key has exhausted search quota (HTTP 429 RESOURCE_EXHAUSTED),
+ *    gracefully falls back to deep domain strategic intelligence simulation.
+ * 3. Handles transient rate-limit throttling (HTTP 429) or high demand (HTTP 503)
+ *    with automated backoff retries and model failover.
+ */
+async function generateExecutiveContent(
+  contents: any[],
+  systemInstruction: string,
+  enableSearchGrounding: boolean = true
+) {
+  const models = ["gemini-3.6-flash", "gemini-3.1-flash-lite", "gemini-3.1-pro-preview"];
+  let groundingStatus: "active" | "quota_fallback" | "internal_knowledge" = "internal_knowledge";
+  let groundingNotice = "";
+
+  // 1. Attempt with Google Search Grounding if requested and search quota is not known to be exhausted
+  if (enableSearchGrounding && !cachedSearchQuotaExhausted) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+          tools: [{ googleSearch: {} }],
+        },
+      });
+      groundingStatus = "active";
+      return { response, groundingStatus, groundingNotice };
+    } catch (err: any) {
+      const errMsg = String(err?.message || err);
+      const status = err?.status || err?.code;
+      if (status === 429 || errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
+        console.warn(`[StratIntel] Google Search Grounding quota exhausted (429). Seamlessly pivoting to deep domain intelligence simulation.`);
+        cachedSearchQuotaExhausted = true;
+        groundingStatus = "quota_fallback";
+        groundingNotice = "Live Google Search grounding quota was exceeded for this API key. StratIntel seamlessly engaged deep domain intelligence without web grounding.";
+      } else {
+        console.warn(`[StratIntel] Search tool error (${status}):`, errMsg);
+      }
+    }
+  } else if (enableSearchGrounding && cachedSearchQuotaExhausted) {
+    groundingStatus = "quota_fallback";
+    groundingNotice = "Live Google Search grounding quota was exceeded for this API key. StratIntel seamlessly engaged deep domain intelligence without web grounding.";
+  }
+
+  // 2. Direct strategic domain generation with dynamic retry and backoff
+  for (const model of models) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.7,
+          },
+        });
+        return { response, groundingStatus, groundingNotice };
+      } catch (err: any) {
+        const errMsg = String(err?.message || err);
+        const status = err?.status || err?.code;
+        console.warn(`[StratIntel] Direct generation on ${model} (attempt ${attempt + 1}/3) failed (${status}):`, errMsg);
+
+        // If rate limit (429) or high demand (503), back off and retry
+        if (attempt < 2 && (status === 429 || status === 503 || errMsg.includes("429") || errMsg.includes("503") || errMsg.includes("RESOURCE_EXHAUSTED"))) {
+          const delayMs = getRetryDelayMs(err, attempt);
+          console.warn(`[StratIntel] Waiting ${delayMs}ms before retrying on ${model}...`);
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+
+        // If non-recoverable on this model, break inner loop to try next model
+        break;
+      }
+    }
+  }
+
+  throw new Error("Unable to complete executive analysis. Please retry in a few moments.");
 }
 
 // Endpoint: Multi-Agent Executive Analysis with Google Search Grounding & Document Ingestion
@@ -129,7 +250,8 @@ app.post("/api/analyze", async (req, res) => {
       turn = 1,
       steeringDirective,
       previousOutput,
-      forcedFramework
+      forcedFramework,
+      enableSearchGrounding = true
     } = req.body;
 
     if (!companyName || !dilemma) {
@@ -159,7 +281,7 @@ You must STRICTLY structure your entire output using this exact HTML block layou
 * **Diagnostic Rationale:** [State in 1 crisp sentence why this specific framework is the most suitable diagnostic tool for this company's exact business dilemma.]
 
 ### 🔍 Environment Diagnosis & Grounding
-[Execute precise Google Search queries here to fetch live market parameters, competitor status, recent quarterly figures, and industry benchmarks. Merge this real data with insights parsed from the company briefing / uploaded documents to flesh out the framework components thoroughly with specific numbers, competitors, and trends.]
+[Provide precise market parameters, competitor status, recent quarterly figures, and industry benchmarks. Merge this data with insights parsed from the company briefing / uploaded documents to flesh out the framework components thoroughly with specific numbers, competitors, and trends.]
 
 ### 🎯 Core Structural Challenge (MECE)
 * [Provide a clean, Mutually Exclusive, Collectively Exhaustive (MECE) breakdown of the target company's primary existential bottleneck based on the framework analysis. Include 3-4 distinct structural pillars.]
@@ -170,7 +292,7 @@ You must STRICTLY structure your entire output using this exact HTML block layou
 
 ### Multi-Agent Crossfire
 * **[Strategist Agent Formulation]:** [Propose an aggressive strategic initiative designed to solve the challenge highlighted by your chosen framework. Quantify expected upside, capital reallocation, and market positioning.]
-* **[Adversarial Agent Counter]:** [Immediately challenge the strategist. Weaponize external risk factors, macro headwinds, cash-burn velocity, or competitor retaliations found via live Google Search queries to expose the strategy's fatal blindspots.]
+* **[Adversarial Agent Counter]:** [Immediately challenge the strategist. Weaponize external risk factors, macro headwinds, cash-burn velocity, or competitor retaliations to expose the strategy's fatal blindspots.]
 </details>
 
 ---
@@ -231,20 +353,16 @@ Current Operational Turn: Turn ${turn}
       });
     }
 
-    // Call Gemini 3.8 Flash with Google Search Grounding tool
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: contents,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-        tools: [{ googleSearch: {} }],
-      },
-    });
+    // Call executive content generator with automatic 429 quota fallback
+    const { response, groundingStatus, groundingNotice } = await generateExecutiveContent(
+      contents,
+      systemInstruction,
+      enableSearchGrounding !== false
+    );
 
     const rawOutput = response.text || "";
 
-    // Extract search queries and grounding citations
+    // Extract search queries and grounding citations if search was active
     const candidate = response.candidates?.[0];
     const groundingMetadata = candidate?.groundingMetadata;
     const searchQueries: string[] = groundingMetadata?.webSearchQueries || [];
@@ -269,6 +387,8 @@ Current Operational Turn: Turn ${turn}
       rawOutput,
       searchQueries,
       citations,
+      groundingStatus,
+      groundingNotice,
       turn,
       parsed: {
         ...parsedData,
@@ -278,9 +398,14 @@ Current Operational Turn: Turn ${turn}
     });
   } catch (error: any) {
     console.error("Error executing multi-agent executive analysis:", error);
+    const errMsg = String(error?.message || error);
+    let userFriendlyMessage = error?.message || "Failed to execute executive committee analysis";
+    if (errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand") || errMsg.includes("overloaded")) {
+      userFriendlyMessage = "The AI service is experiencing a temporary surge in traffic. Please wait a moment and click Convene again.";
+    }
     res.status(500).json({
-      error: error?.message || "Failed to execute executive committee analysis",
-      details: String(error)
+      error: userFriendlyMessage,
+      details: errMsg
     });
   }
 });
@@ -299,6 +424,6 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`StratIntel Executive Platform running on http://0.0.0.0:${PORT}`);
 });

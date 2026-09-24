@@ -137,6 +137,7 @@ export default function App() {
     dilemma: string;
     uploadedDoc?: UploadedDocPayload;
     forcedFramework?: string;
+    enableSearchGrounding?: boolean;
   }) => {
     setIsLoading(true);
     setError(null);
@@ -157,6 +158,7 @@ export default function App() {
           dilemma: payload.dilemma,
           uploadedDoc: payload.uploadedDoc,
           forcedFramework: payload.forcedFramework,
+          enableSearchGrounding: payload.enableSearchGrounding,
           turn: 1
         }),
       });
@@ -173,11 +175,14 @@ export default function App() {
         diagnosticRationale: data.parsed.diagnosticRationale,
         searchQueries: data.searchQueries || [],
         citations: data.citations || [],
+        groundingStatus: data.groundingStatus,
+        groundingNotice: data.groundingNotice,
         meceBottleneck: data.parsed.meceBottleneck || [],
         strategistInitiative: data.parsed.strategistInitiative || '',
         adversarialCounter: data.parsed.adversarialCounter || '',
         optionA: data.parsed.optionA,
         optionB: data.parsed.optionB,
+        optionC: data.parsed.optionC,
         turn: 1
       };
 
@@ -245,11 +250,14 @@ export default function App() {
         diagnosticRationale: data.parsed.diagnosticRationale,
         searchQueries: data.searchQueries || [],
         citations: data.citations || [],
+        groundingStatus: data.groundingStatus,
+        groundingNotice: data.groundingNotice,
         meceBottleneck: data.parsed.meceBottleneck || [],
         strategistInitiative: data.parsed.strategistInitiative || '',
         adversarialCounter: data.parsed.adversarialCounter || '',
         optionA: data.parsed.optionA,
         optionB: data.parsed.optionB,
+        optionC: data.parsed.optionC,
         turn: nextTurn
       };
 
@@ -434,6 +442,8 @@ export default function App() {
                 searchQueries={analysisData.searchQueries}
                 citations={analysisData.citations}
                 turn={turn}
+                groundingStatus={analysisData.groundingStatus}
+                groundingNotice={analysisData.groundingNotice}
                 onOpenExport={() => {
                   setExportTargetSession(null);
                   setExportModalOpen(true);

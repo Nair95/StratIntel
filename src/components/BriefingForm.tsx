@@ -36,6 +36,7 @@ interface BriefingFormProps {
     dilemma: string;
     uploadedDoc?: UploadedDocPayload;
     forcedFramework?: string;
+    enableSearchGrounding?: boolean;
   }) => void;
 }
 
@@ -49,6 +50,7 @@ export const BriefingForm: React.FC<BriefingFormProps> = ({
     'Should Intel spin off Intel Foundry Services (IFS) into an independent commercial entity, or double down on IDM 2.0 while hyperscalers design custom ARM/RISC-V silicon and TSMC monopolizes 3nm advanced packaging?'
   );
   const [selectedFrameworkOverride, setSelectedFrameworkOverride] = useState('');
+  const [enableSearchGrounding, setEnableSearchGrounding] = useState(true);
   const [uploadedDoc, setUploadedDoc] = useState<UploadedDocPayload | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -106,7 +108,8 @@ export const BriefingForm: React.FC<BriefingFormProps> = ({
       industry,
       dilemma,
       uploadedDoc: uploadedDoc || undefined,
-      forcedFramework: selectedFrameworkOverride || undefined
+      forcedFramework: selectedFrameworkOverride || undefined,
+      enableSearchGrounding
     });
   };
 
@@ -319,6 +322,37 @@ export const BriefingForm: React.FC<BriefingFormProps> = ({
             <p className="text-[10px] text-slate-500 mt-1 font-mono">
               The engine dynamically selects the most surgical 1-2 frameworks if left on Auto.
             </p>
+          </div>
+
+          {/* Real-time Search Grounding Policy Toggle */}
+          <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-cyan-950/80 text-cyan-400 border border-cyan-800/40">
+                <Search className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-mono font-medium text-slate-200 flex items-center gap-2">
+                  <span>Real-Time Google Search Grounding</span>
+                  <span className="text-[10px] text-cyan-400/90 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                    Live Web Citations
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  If search tool quota is exhausted on your key, StratIntel automatically falls back to deep domain intelligence.
+                </p>
+              </div>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enableSearchGrounding}
+                onChange={(e) => setEnableSearchGrounding(e.target.checked)}
+                disabled={isLoading}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+            </label>
           </div>
         </div>
 

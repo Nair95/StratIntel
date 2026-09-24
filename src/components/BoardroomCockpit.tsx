@@ -47,7 +47,9 @@ export const BoardroomCockpit: React.FC<BoardroomCockpitProps> = ({
     optionA,
     optionB,
     optionC,
-    turn = 1
+    turn = 1,
+    groundingStatus,
+    groundingNotice
   } = data;
 
   const frameworkName = frameworksSelected[0] || "Porter's Five Forces & DuPont Analysis";
@@ -345,6 +347,39 @@ export const BoardroomCockpit: React.FC<BoardroomCockpitProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Option C Card (Optionality / Asymmetric Pivot) */}
+            {optionC && (
+              <div className="bg-slate-900/90 border border-purple-800/40 rounded-xl p-5 shadow-xl relative overflow-hidden flex flex-col justify-between md:col-span-2">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-400 bg-purple-950 px-2 py-0.5 rounded border border-purple-800/50">
+                      Option C (Asymmetric Opportunity / Optionality)
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">Catalyst Triggered</span>
+                  </div>
+                  <h4 className="text-base font-bold text-slate-100 mb-2">
+                    {optionC.title || "Asymmetric Market Optionality"}
+                  </h4>
+                  <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800 mb-4">
+                    <div className="text-[11px] font-mono text-purple-400 uppercase tracking-wider mb-1">Strategic Hypothesis</div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {optionC.hypothesis}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {optionC.executionVectors?.map((vec, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs text-slate-300 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/50">
+                        <ArrowRight className="w-3.5 h-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span>{vec}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -358,10 +393,23 @@ export const BoardroomCockpit: React.FC<BoardroomCockpitProps> = ({
                 <Globe2 className="w-5 h-5 text-indigo-400" />
                 <h3 className="text-sm font-bold text-slate-100">Live Google Search Grounding Engine</h3>
               </div>
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded border border-emerald-800/40">
-                Live Grounding: ACTIVE
-              </span>
+              {groundingStatus === 'quota_fallback' ? (
+                <span className="text-xs font-mono text-amber-400 bg-amber-950/80 px-2.5 py-1 rounded border border-amber-800/50">
+                  Mode: Deep Domain Intelligence (Search Quota Reached)
+                </span>
+              ) : (
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-950 px-2.5 py-1 rounded border border-emerald-800/40">
+                  Live Grounding: ACTIVE
+                </span>
+              )}
             </div>
+
+            {/* Quota fallback explanation banner */}
+            {groundingStatus === 'quota_fallback' && (
+              <div className="mb-4 p-3 bg-amber-950/30 border border-amber-800/50 rounded-lg text-xs text-amber-200/90 font-mono">
+                ℹ️ Google Search tool quota was reached for your current API key. StratIntel seamlessly engaged deep strategic knowledge simulation without web queries so your executive analysis proceeded without interruption.
+              </div>
+            )}
 
             {/* Queries executed */}
             <div className="mb-5">
