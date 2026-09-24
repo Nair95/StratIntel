@@ -1,0 +1,8 @@
+{
+  "name": "StratIntel Executive Market Intelligence Platform",
+  "description": "Multi-agent executive committee featuring Strategist and Adversarial agents with dynamic framework selection, PDF ingestion, and live Google Search grounding.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
